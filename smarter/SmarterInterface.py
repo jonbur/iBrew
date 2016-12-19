@@ -2728,6 +2728,7 @@ class SmarterClient:
 
     def __isGroup(self,group):
         for i in self.triggerGroups:
+            logging.debug(i)    
             if i[0] == group:
                 return True
         return False
@@ -2818,7 +2819,7 @@ class SmarterClient:
     @_threadsafe_function
     def __trigger(self,triggerID,old,new):
         if not self.events: return
-        
+        logging.debug("JB: running trigger handler") 
         #if self.dump and self.dump_status:
         #    if self.isKettle:
         #        logging.debug("Trigger: " + Smarter.triggersKettle[trigger][0] + " - old:" + str(old) + " new:" + str(new))
@@ -2826,8 +2827,9 @@ class SmarterClient:
         #    if self.isCoffee:
         #        logging.debug("Trigger: " + Smarter.triggersCoffee[trigger][0] + " - old:" + str(old) + " new:" + str(new))
 
-
+        logging.debug("JB: triggerGroups" + self.triggerGroups)
         for i in self.triggerGroups:
+            #logging.debug("JB: " + i)
             if i[1]:
                 s = self.triggerGet(i[0],Smarter.triggerName(triggerID))
                 if s != "":

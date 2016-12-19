@@ -53,6 +53,7 @@ class BaseHandler(tornado.web.RequestHandler):
 
 
 class GenericAPIHandler(BaseHandler):
+    SUPPORTED_METHODS = ("GET", "POST", "SUBSCRIBE")
     def setContentType(self):
         self.add_header("Content-type","application/json; charset=UTF-8")
 
@@ -792,6 +793,34 @@ class StartHandler(GenericAPIHandler):
         self.setContentType()
         self.write(response)
 
+class SubscriptionHandler(GenericAPIHandler):
+
+    def subscribe(self, ip):
+        if ip in self.application.clients:
+            client = self.application.clients[ip]
+            response = { 'method' : "subscribe"}
+            self.setContentType()
+            self.write(response)
+            logging.info(self.request.headers.get("Callback"))
+            logging.info(ip)
+
+            cb_url = self.request.headers.get("Callback")[1:-1]
+            logging.info(cb_url)
+
+	    client.triggerAdd("SmartThings", "Temperature","http://google.com")
+
+           # if not cb_url in self.subscription_list:
+                #self.subscription_list[cb_url] = {}
+           #     logging.info('Added subscription %s', cb_url)
+           # else:
+            #    logging.info('Refreshed subscription %s', cb_url)
+            #self.subscription_list[cb_url]['expiration'] = time.time() + 24 * 3600
+           # logging.info(self.subscription_list)
+
+        else:
+            response = { 'error': 'no device' }
+        self.setContentType()
+        self.write(response)
 
 #------------------------------------------------------
 # Remote Blocks
@@ -1152,6 +1181,7 @@ class iBrewWeb(tornado.web.Application):
                 "static_url_prefix" : self.webroot + "/resources/", }
 
             handlers = [
+                (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/subscribe/?",SubscriptionHandler),
                 (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/status/?",DeviceHandler),
                 (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/calibrate/?",CalibrateHandler),
                 (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/calibrate/base/?",CalibrateBaseHandler),
