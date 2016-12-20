@@ -1,6 +1,20 @@
-# iBrew: The conundrum struggle!
+# iBrew: The Dream Tea!
 
 iKettle, [iKettle 2.0](http://smarter.am/ikettle) and [Smarter Coffee](http://smarter.am/coffee) Interface
+
+## Needed remote access to iKettle 1, to test new code!
+
+To test and finish: 
+  * iKettle Emulation (emulates an iKettle with an iKettle 2.0)
+  * iKettle Brigde (connect to an iKettle and use it if it was an iKettle 2.0)
+  * Figure out to correct responses
+  
+Such that all features of iBrew are available (if supported) for the original iKettle!
+
+So if you have an original iKettle filled up with water! And some time to spare!
+
+Contact <tristan@monkeycat.nl>!
+
 
 ## Downloads
   * [Windows](https://dl.dropboxusercontent.com/u/12474226/iBrew.exe)
@@ -75,10 +89,11 @@ It features!
 __For smarthome fans!__
  * Command Line
  * HomeKit support 
+ * Relay
+ * Simulator
 
 #### Usefull links
-Check out [ikettle-brute-forcer](https://github.com/C0smos/ikettle-brute-forcer) and the iKettle simulator [kettle-fake](https://github.com/jerrosenberg/kettle-fake)
-
+Check out [ikettle-brute-forcer](https://github.com/C0smos/ikettle-brute-forcer)
         
 ### iBrew in the Media
 [The iKettle, the Eleven-Hour Struggle to Make a Cup of Tea, and Why It Was All About Data, Analytics and Connecting Things Together](https://medium.com/mark-rittman/the-story-behind-the-ikettle-the-eleven-hour-struggle-to-make-a-cup-of-tea-and-why-it-was-all-769144d12d7#.h62foolse) 
@@ -140,6 +155,11 @@ See Pi section.
 ### Source
 
 You can run iBrew on systems that run python 2.7. Download and unpack the [source](https://github.com/Tristan79/iBrew/archive/master.zip), download it from github using [Github Desktop](https://desktop.github.com) or manually `git clone https://github.com/Tristan79/iBrew.git`. Finish the setup with running `make setup` in the iBrew folder to configure the python packages for bare bones operation. Update to the latest version of iBrew with `git pull`
+
+#### Bonjour
+
+Bonjour is not enabled by default, to install it use `make bonjour` or for windows `make bonjourwin`. But you have to have bonjour installed on your system, macOS its out of the box, on most linux system you can install it with (or try equivalent packages for your *nix distro) `apt-get install avahi-daemon avahi-discover libnss-mdns` and on Windows you either install iTunes or download it from [apple](http://developer.apple.com/networking/bonjour/download/)
+Also check out [pybonjour](https://code.google.com/archive/p/pybonjour/)
 
 ### Raspberry Pi Jessy (light)
 
@@ -277,33 +297,48 @@ See the console section for the commands.
  
 ```
 
-  iBrew Web Server
+  iBrew Server
+  ________________
 
-  Usage: ibrew (dump) (events) (fahrenheid) web (port) (rules) (modifiers) (host(:port))
+  Usage: ibrew (dump) (events) (fahrenheid) server (host:(port) (host:(port))
 
     dump                   dump message enabled
     events                 enable trigger events (monitor, relay, console)
     fahrenheid             use fahrenheid
     web                    start web interface & rest api
     port                   optional port number, default 2082
-    rules                  blocking rules
-    modifiers              patches
+    rules                  blocking & patching rules
     host                   host address of the appliance (format: ip4, ip6, fqdn)
+    port                   port of appliance, optional, only use if alternative port
 
 
-  iBrew Command Line
+  iBrew iKettle Legacy Command Line
+  _________________________________
 
-  Usage: ibrew (dump) (events) (shout|slow) (coffee|kettle) (fahrenheid) [command] (host(:port))
+  Usage: ibrew (dump) legacy command (host(:port))
 
+    command                iKettle command, action to take!
+    host                   host address of the appliance (format: ip4, ip6, fqdn)
+    port                   port of appliance, optional, only use if alternative port
+
+
+  iBrew iKettle 2.0 & Smater Coffee Command Line
+  ______________________________________________
+
+  Usage: ibrew (dump) (events) (legacy [bridge|emulate] (host:(port))) (shout|slow) (coffee|kettle) (fahrenheid) [command] (host(:port))
+
+    bridge                 emulate iKettle 2.0 using legacy iKettle (NOT IMPlEMENTED)
+    emulate (host:(port)   emulates legacy iKettle
+    coffee                 assumes coffee machine
+    command                action to take!
     dump                   dump message enabled
     events                 enable trigger events (monitor, relay, console)
+    fahrenheid             PARTLY WORKING use fahrenheid
+    host                   host address of the appliance (format: ip4, ip6, fqdn), only use if detection fails
+    kettle                 assumes kettle
+    port                   port of appliance, optional, only use if detection fails
     shout                  sends commands and quits not waiting for a reply
     slow                   fully inits everything before action
-    coffee                 assumes coffee machine
-    kettle                 assumes kettle
-    fahrenheid             PARTLY WORKING use fahrenheid
-    command                action to take!
-    host                   host address of the appliance (format: ip4, ip6, fqdn)
 
   If you do not supply a host, it will try to connect to the first detected appliance
   Thus if you have more then one appliance supply a host (if its not in direct mode)
@@ -311,20 +346,37 @@ See the console section for the commands.
 
 ```
 
-### Console
-Start the console with the command `iBrew console`. The following commands are available within the console,
-you can also use them on the command line as arguments, note that [] are manditory arguments and () are optional arguments.
+The following commands are available, note that [] are manditory arguments and () are optional arguments.
 
 ```
+
+  Commands
+  ________
+
+  iKettle Commands
+    heat                   start heating water
+    stop                   stop heating water
+    65                     select 65°c
+    80                     select 80°c
+    95                     select 95°c
+    100                    select 100°c
+    warm                   start keep water warm
+    5                      select keep water warm timer is set to 5 minutes
+    10                     select keep water warm timer is set to 10 minutes
+    20                     select keep water warm timer is set to 20 minutes
+    status                 Get status
+
+    protocol               protocol information
+    simulate               start kettle simulation
+    relay ((ip:)port)      start relay
 
   iKettle 2.0 & Smarter Coffee Commands
     default                set default settings
     info                   appliance info
     list                   list detected appliances
     reset                  reset appliance to default
-    shortstatus            show status
     start                  start the appliance
-    status                 show full status
+    status (full)          show status
     settings               show user settings
     stop                   stop the appliance
 
@@ -332,16 +384,17 @@ you can also use them on the command line as arguments, note that [] are mandito
     base                   show watersensor base value
     base [base]            store watersensor base value
     boil                   heat till 100°C
-    kettlecoffee           warms water for coffee 95°C
     calibrate              calibrates watersensor
     celsius                use celsius °C [console only]
     fahrenheid             use fahrenheid °F [console only]
     formula (temperature (keepwarm))] heat kettle in formula mode
     heat (temperature)(keepwarm))    heat kettle
+    kettlecoffee           warms water for coffee 95°C
+    milk                   warm  65°C
     settings [temperature] [keepwarm] [formula] [formulatemperature] store kettle user settings
     tea [green,white,oelong,black] warms water for tea 65°C,80°C,90°C,100°C
 
-  Smarter Coffee  Commands
+  Smarter Coffee Commands
     beans                  use beans for coffee
     brew (cups (hotplate (grind (strength)))) brew coffee
     brew default           brew coffee with stored user default settings
@@ -363,22 +416,6 @@ you can also use them on the command line as arguments, note that [] are mandito
     join [net] (pass)      connect to wireless network
     rejoin                 rejoins current wireless network [not in direct mode]
     scan                   scan wireless networks
-
-  Triggers
-    trigger add [group] [trigger] [action] add trigger to a group
-    trigger delete [group] (trigger) delete trigger or group triggers
-    trigger groups         show list of groups
-    trigger [group]        show triggers of group
-    trigger                show all triggers
-    trigger [group] [bool] enabled/disable trigger group
-    trigger [group] state [bool] set group state output
-
-  Actions can either be a path to a command or url
-
-  Trigger actions examples:
-    C:\SCRIPTS\SENSOR.BAT §O §N
-    /home/pi/iBrew/scripts/smarthome.sh Temperature §O §N
-    http://smarthome.local/?idx=34&value=§N
 
   Smarter Network Commands
     connect (host) (rules&modifiers) connect to appliance
@@ -415,6 +452,22 @@ you can also use them on the command line as arguments, note that [] are mandito
     temperaturelimit   STATE or [0..100]  kettle can not heat above VALUE degrees
     childprotection    STATE              kettle can not heat above 45 degrees
 
+  Triggers
+    trigger add [group] [trigger] [action] add trigger to a group
+    trigger delete [group] (trigger) delete trigger or group triggers
+    trigger groups         show list of groups
+    trigger [group]        show triggers of group
+    trigger                show all triggers
+    trigger [group] [bool] enabled/disable trigger group
+    trigger [group] state [bool] set group state output
+
+  Actions can either be a path to a command or url
+
+  Trigger actions examples:
+    C:\SCRIPTS\SENSOR.BAT §O §N
+    /home/pi/iBrew/scripts/smarthome.sh Temperature §O §N
+    http://smarthome.local/?idx=34&value=§N
+
   Debug Commands
     time [time]            set the appliance time
     firmware               show firmware Wifi
@@ -441,11 +494,14 @@ you can also use them on the command line as arguments, note that [] are mandito
     console (rules) (modifiers) start console [command line only]
     joke                   show joke
     license                show license
-    license disagree       stop using license [command line only]
     quit                   quit console [console only]
 
 
 ```
+
+Alternativly you can run a console to test out the commands. start the console with the command 
+
+`ibrew console 10.0.0.99`. 
 
 #### Examples
 
@@ -471,33 +527,8 @@ you can also use them on the command line as arguments, note that [] are mandito
     block in:wifi,in:02          Block wifi and [Set appliance time] command to appliance
     brew 4 10 beans strong   Brew 4 cups of strong coffee using the beans keeping the hotplate on for 10 minutes
     join MyWifi p@ssw0rd     Joins MyWifi wireless network using p@ssw0rd as credential
-    settings 100 20 True 75  Set default user settings for the kettle to...
+    settings 100 20 On 75    Set default user settings for the kettle to...
 
-
-```
-
-### iKettle legacy support
-
-It has no event trigger system no rest api, only a command line interface but its good enough for Homebrigde ;-)
-
-```
-
-Usage: ibrewlegacy command host
-
-Commands
-    heat  Start heating water
-    stop  Stop heating water
-      65  65ºC selected
-      80  80ºC selected
-      95  95ºC selected
-     100  100ºC selected
-    warm  Keep water warm
-       5  Keep water warm timer is set to 5 minutes
-      10  Keep water warm timer is set to 10 minutes
-      20  Keep water warm timer is set to 20 minutes
-  status  Kettle status
-
-    host  ip or host address of the iKettle
 
 ```
 
@@ -770,7 +801,7 @@ Look up the idx in `Setup -> Devices`
 Use the _idx_ of the sensor to add a trigger
 
 ```
-ibrew trigger add Domoticz OnBase "http://127.0.0.1:8080/json.htm?type=command&param=switchlight&idx=99&switchcmd=%§N" 10.0.0.99
+ibrew trigger add Domoticz OnBase "http://127.0.0.1:8080/json.htm?type=command&param=switchlight&idx=99&switchcmd=§N" 10.0.0.99
 ```
 
 We need to set up the right boolean state, domoticz uses the format _On_ or _Off_
@@ -820,11 +851,11 @@ Fill in your own device host (either IP address or hostname) and location to iBr
 		"platform": "cmdSwitch2",
 		"switches": [{
 			"name": "iKettle",
-			"on_cmd": "/Users/Tristan/Coding/iBrew/ibrewlegacy heat 10.0.0.3",
-			"off_cmd": "/Users/Tristan/Coding/iBrew/ibrewlegacy stop 10.0.0.3",
-			"state_cmd": "/Users/Tristan/Coding/iBrew/ibrewlegacy status 10.0.0.3 | grep 'Heating'"
+			"on_cmd": "/Users/Tristan/Coding/iBrew/ibrew legacy heat 10.0.0.3",
+			"off_cmd": "/Users/Tristan/Coding/iBrew/ibrew legacy stop 10.0.0.3",
+			"state_cmd": "/Users/Tristan/Coding/iBrew/ibrew legacy status 10.0.0.3 | grep 'Heating'"
             "manufacturer": "iBrew",
-            "model": "iKettle Intermezzo",
+            "model": "iBrew iKettle",
             "serial": "44DE1AD79BC",
             "polling": true,
             "interval": 1,
@@ -841,9 +872,9 @@ Fill in your own device host (either IP address or hostname) and location to iBr
 			"name": "iKettle 2.0",
 			"on_cmd": "/Users/Tristan/Coding/iBrew/ibrew start 10.0.0.99",
 			"off_cmd": "/Users/Tristan/Coding/iBrew/ibrew stop 10.0.0.99",
-			"state_cmd": "/Users/Tristan/Coding/iBrew/ibrew shortstatus 10.0.0.99 | grep 'busy'",
+			"state_cmd": "/Users/Tristan/Coding/iBrew/ibrew status 10.0.0.99 | grep 'busy'",
             "manufacturer": "iBrew",
-            "model": "iKettle 2.0 Intermezzo",
+            "model": "iBrew iKettle 2.0",
             "serial": "44DE2AD79BC",
             "polling": true,
             "interval": 1
@@ -859,9 +890,9 @@ Fill in your own device host (either IP address or hostname) and location to iBr
 			"name": "Smarter Coffee",
 			"on_cmd": "/Users/Tristan/Coding/iBrew/ibrew start 10.0.0.89",
 			"off_cmd": "/Users/Tristan/Coding/iBrew/ibrew stop 10.0.0.89",
-			"state_cmd": "/Users/Tristan/Coding/iBrew/ibrew shortstatus 10.0.0.89 | grep 'busy'",
+			"state_cmd": "/Users/Tristan/Coding/iBrew/ibrew status 10.0.0.89 | grep 'busy'",
             "manufacturer": "iBrew",
-            "model": "Smarter Coffee Intermezzo",
+            "model": "iBrew Smarter Coffee",
             "serial": "44DE3AD79BC",
             "polling": true,
             "interval": 1
@@ -893,7 +924,7 @@ example config file for iKettle 2.0.
 			"name": "iKettle 2.0",
 			"on_cmd": "/Users/Tristan/Coding/iBrew/ibrew start 10.0.0.99",
 			"off_cmd": "/Users/Tristan/Coding/iBrew/ibrew stop 10.0.0.99",
-			"state_cmd": "/Users/Tristan/Coding/iBrew/ibrew shortstatus 10.0.0.99 | grep 'busy'",
+			"state_cmd": "/Users/Tristan/Coding/iBrew/ibrew status 10.0.0.99 | grep 'busy'",
             "manufacturer": "iBrew",
             "model": "iKettle 2.0 Intermezzo",
             "serial": "44DE2AD79BC",
@@ -932,7 +963,7 @@ ibrewstatus.sh
 
 ```
 #!/bin/bash
-CMD=`ibrew shortstatus <your kettle IP> |grep busy`
+CMD=`ibrew status <your kettle IP> |grep busy`
 if [ -z "$CMD" ];then
         exit 1
 else

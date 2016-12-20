@@ -9,9 +9,9 @@ import random
 #
 # https://github.com/Tristan79/iBrew
 #
-# Copyright © 2016-2017 Tristan (@monkeycat.nl). All Rights Reserved
+# Copyright © 2017 Tristan (@monkeycat.nl). All Rights Reserved
 #
-# The conundrum struggle
+# The Dream Tea
 #------------------------------------------------------
 
 
@@ -73,7 +73,7 @@ class iBrewJokes:
                 ("Energy is…","MilkCoffee ²"),
                 ("I’m sure all coffee beans are juvenile","They’re always getting grounded!"),
                 ("Is coffee your daily grind?","Your coffee machine"),
-                ("Too much of a good thing…","…is simply wonderful!"),
+                ("Too much of a good thing…","is simply wonderful!"),
                 ("Oh, divine coffee! They grind thee kneeling,","beat thee with hands praying, and drink tea with eyes to heaven")
         ]
         

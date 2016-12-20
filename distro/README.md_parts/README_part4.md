@@ -1,31 +1,6 @@
 
 ```
 
-### iKettle legacy support
-
-It has no event trigger system no rest api, only a command line interface but its good enough for Homebrigde ;-)
-
-```
-
-Usage: ibrewlegacy command host
-
-Commands
-    heat  Start heating water
-    stop  Stop heating water
-      65  65ºC selected
-      80  80ºC selected
-      95  95ºC selected
-     100  100ºC selected
-    warm  Keep water warm
-       5  Keep water warm timer is set to 5 minutes
-      10  Keep water warm timer is set to 10 minutes
-      20  Keep water warm timer is set to 20 minutes
-  status  Kettle status
-
-    host  ip or host address of the iKettle
-
-```
-
 ### Relay
 
 Start a relay server on port 2081, it acts as an man in the middle passing messages between the appliance and
@@ -295,7 +270,7 @@ Look up the idx in `Setup -> Devices`
 Use the _idx_ of the sensor to add a trigger
 
 ```
-ibrew trigger add Domoticz OnBase "http://127.0.0.1:8080/json.htm?type=command&param=switchlight&idx=99&switchcmd=%§N" 10.0.0.99
+ibrew trigger add Domoticz OnBase "http://127.0.0.1:8080/json.htm?type=command&param=switchlight&idx=99&switchcmd=§N" 10.0.0.99
 ```
 
 We need to set up the right boolean state, domoticz uses the format _On_ or _Off_
@@ -345,11 +320,11 @@ Fill in your own device host (either IP address or hostname) and location to iBr
 		"platform": "cmdSwitch2",
 		"switches": [{
 			"name": "iKettle",
-			"on_cmd": "/Users/Tristan/Coding/iBrew/ibrewlegacy heat 10.0.0.3",
-			"off_cmd": "/Users/Tristan/Coding/iBrew/ibrewlegacy stop 10.0.0.3",
-			"state_cmd": "/Users/Tristan/Coding/iBrew/ibrewlegacy status 10.0.0.3 | grep 'Heating'"
+			"on_cmd": "/Users/Tristan/Coding/iBrew/ibrew legacy heat 10.0.0.3",
+			"off_cmd": "/Users/Tristan/Coding/iBrew/ibrew legacy stop 10.0.0.3",
+			"state_cmd": "/Users/Tristan/Coding/iBrew/ibrew legacy status 10.0.0.3 | grep 'Heating'"
             "manufacturer": "iBrew",
-            "model": "iKettle Intermezzo",
+            "model": "iBrew iKettle",
             "serial": "44DE1AD79BC",
             "polling": true,
             "interval": 1,
@@ -366,9 +341,9 @@ Fill in your own device host (either IP address or hostname) and location to iBr
 			"name": "iKettle 2.0",
 			"on_cmd": "/Users/Tristan/Coding/iBrew/ibrew start 10.0.0.99",
 			"off_cmd": "/Users/Tristan/Coding/iBrew/ibrew stop 10.0.0.99",
-			"state_cmd": "/Users/Tristan/Coding/iBrew/ibrew shortstatus 10.0.0.99 | grep 'busy'",
+			"state_cmd": "/Users/Tristan/Coding/iBrew/ibrew status 10.0.0.99 | grep 'busy'",
             "manufacturer": "iBrew",
-            "model": "iKettle 2.0 Intermezzo",
+            "model": "iBrew iKettle 2.0",
             "serial": "44DE2AD79BC",
             "polling": true,
             "interval": 1
@@ -384,9 +359,9 @@ Fill in your own device host (either IP address or hostname) and location to iBr
 			"name": "Smarter Coffee",
 			"on_cmd": "/Users/Tristan/Coding/iBrew/ibrew start 10.0.0.89",
 			"off_cmd": "/Users/Tristan/Coding/iBrew/ibrew stop 10.0.0.89",
-			"state_cmd": "/Users/Tristan/Coding/iBrew/ibrew shortstatus 10.0.0.89 | grep 'busy'",
+			"state_cmd": "/Users/Tristan/Coding/iBrew/ibrew status 10.0.0.89 | grep 'busy'",
             "manufacturer": "iBrew",
-            "model": "Smarter Coffee Intermezzo",
+            "model": "iBrew Smarter Coffee",
             "serial": "44DE3AD79BC",
             "polling": true,
             "interval": 1
@@ -418,7 +393,7 @@ example config file for iKettle 2.0.
 			"name": "iKettle 2.0",
 			"on_cmd": "/Users/Tristan/Coding/iBrew/ibrew start 10.0.0.99",
 			"off_cmd": "/Users/Tristan/Coding/iBrew/ibrew stop 10.0.0.99",
-			"state_cmd": "/Users/Tristan/Coding/iBrew/ibrew shortstatus 10.0.0.99 | grep 'busy'",
+			"state_cmd": "/Users/Tristan/Coding/iBrew/ibrew status 10.0.0.99 | grep 'busy'",
             "manufacturer": "iBrew",
             "model": "iKettle 2.0 Intermezzo",
             "serial": "44DE2AD79BC",
@@ -457,7 +432,7 @@ ibrewstatus.sh
 
 ```
 #!/bin/bash
-CMD=`ibrew shortstatus <your kettle IP> |grep busy`
+CMD=`ibrew status <your kettle IP> |grep busy`
 if [ -z "$CMD" ];then
         exit 1
 else

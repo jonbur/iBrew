@@ -21,13 +21,13 @@ import traceback
 #------------------------------------------------------
 # iBrew
 #
-# Web & JSON REST interface to iKettle 2.0 & Smarter Coffee Devices
+# Web & JSON REST interface to Smarter Appliances
 #
 # https://github.com/Tristan79/iBrew
 #
-# Copyright © 2016-2017 Tristan (@monkeycat.nl). All Rights Reserved
+# Copyright © 2017 Tristan (@monkeycat.nl). All Rights Reserved
 #
-# The conundrum struggle
+# The Dream Tea
 #------------------------------------------------------
 
 
@@ -101,7 +101,12 @@ class InfoPageHandler(BaseHandler):
 class WirelessPageHandler(BaseHandler):
     #@tornado.web.authenticated
     def get(self,ip):
-        self.render("device/wireless.html",client = self.application.clients[ip])
+        try:
+            c = self.application.clients[ip]
+        except:
+            c = None
+            # FIX!
+        self.render("device/wireless.html",client = c)
 
 
 class APIPageHandler(BaseHandler):
@@ -197,13 +202,31 @@ def encodeRelay(enabled,version,host):
         return False
 
 def encodeDevice(client):
-    return { 'type'        : { 'description' : Smarter.device_to_string(client.deviceId),
-                               'id'          : client.deviceId
-                            },
-             'directmode'  : client.isDirect,
-             'host'        : client.host,
-             'connected'   : client.connected,
-             'relay'       : encodeRelay(client.remoteRelay,client.remoteRelayVersion,client.remoteRelayHost),
+    mode = 'normal'
+    if client.simulate:
+        mode = 'simulation'
+    elif client.emulate:
+        mode = 'emulation'
+    elif client.bridge:
+        mode = 'bridge'
+
+    cc = client.connected
+    if client.simulate or client.bridge:
+        cc = True
+
+    return { 'model'       : Smarter.device_to_string(client.deviceId),
+             'mode'        : mode,
+             'network'     : { 'connection'  : { 'directmode'  : client.isDirect,
+                                                 'host'        : client.host,
+                                                 'port'        : client.port,
+                                                 'connected'   : cc,
+                                                 'relay'       : encodeRelay(client.remoteRelay,client.remoteRelayVersion,client.remoteRelayHost)
+                                               },
+                               'relay'       : { 'bind'   : client.relayHost,
+                                                 'port'   : client.relayPort,
+                                                 'active' : client.relay
+                                               },
+                              },
              'firmware'    : encodeFirmware(client.deviceId,client.version)
             }
 
@@ -215,13 +238,12 @@ class DeviceHandler(GenericAPIHandler):
             client = self.application.clients[ip]
             
             if client.isKettle:
-                response = { 'device'      : encodeDevice(client),
+                response = { 'appliance'   : encodeDevice(client),
                              'sensors'     : { 'waterlevel'  : { 'raw'    : client.waterSensor,
                                                                  'stable' : client.waterSensorStable,
                                                                  'base'   : client.waterSensorBase
                                                                },
                                                'base'        : Smarter.string_base_on_off(client.onBase),
-                                               'status'      : Smarter.status_kettle_description(client.kettleStatus),
                                                'temperature' : { 'raw'    : { 'fahrenheid' : Smarter.celsius_to_fahrenheid(client.temperature),
                                                                               'celsius'    : client.temperature
                                                                             },
@@ -231,20 +253,21 @@ class DeviceHandler(GenericAPIHandler):
                                                                }
                                                                
                                              },
-                             
-                             'default'     : { 'temperature' : { 'fahrenheid' : Smarter.celsius_to_fahrenheid(client.defaultTemperature),
-                                                                 'celsius'    : client.defaultTemperature,
-                                                                 'prefered'   : Smarter.temperature_metric_to_string()
-                                                               },
-                                               'keepwarm'    : client.defaultKeepWarmTime,
-                                               'formula'     : { 'use'     : client.defaultFormula,
-                                                                 'temperature' : { 'fahrenheid' : Smarter.celsius_to_fahrenheid(client.defaultFormulaTemperature),
-                                                                                   'celsius' : client.defaultFormulaTemperature
-                                                                                 }
-
+                             'status'      : Smarter.status_kettle_description(client.kettleStatus),
+                             'settings'    : { 'default'     : { 'temperature' : { 'fahrenheid' : Smarter.celsius_to_fahrenheid(client.defaultTemperature),
+                                                                                   'celsius'    : client.defaultTemperature,
+                                                                                   'prefered'   : Smarter.temperature_metric_to_string()
+                                                                                 },
+                                                                 'keepwarm'    : client.defaultKeepWarmTime,
+                                                                 'formula'     : { 'use'     : client.defaultFormula,
+                                                                                   'temperature' : { 'fahrenheid' : Smarter.celsius_to_fahrenheid(client.defaultFormulaTemperature),
+                                                                                                     'celsius' : client.defaultFormulaTemperature
+                                                                                                   }
+                                                                                  }
                                                                }
                                              }
                             }
+                            
             elif client.isCoffee:
             
                 if client.mode == Smarter.CoffeeCupMode:
@@ -256,18 +279,18 @@ class DeviceHandler(GenericAPIHandler):
                     req = "required"
                 else:
                     req = "optional"
-                response = { 'device'      : encodeDevice(client),
+                response = { 'appliance'   : encodeDevice(client),
                              'sensors'     : { 'hotplate'   : client.hotPlateOn,
                                                'heater'     : client.heaterOn,
                                                'grinder'    : client.grinderOn,
-                                               'waterlevel'     : client.waterLevel,
-                                               'status'         : { 'working'     : client.working,
-                                                                    'ready'       : client.ready,
-                                                                    'cups'        : client.cupsBrew,
-                                                                    'carafe'      : client.carafe,
-                                                                    'enoughwater' : client.waterEnough,
-                                                                    'timerevent'  : client.timerEvent
-                                                                  },
+                                               'waterlevel' : client.waterLevel
+                                              },
+                             'status'      : { 'working'     : client.working,
+                                               'ready'       : client.ready,
+                                               'cups'        : client.cupsBrew,
+                                               'carafe'      : client.carafe,
+                                               'enoughwater' : client.waterEnough,
+                                               'timerevent'  : client.timerEvent
                                              },
                              'settings'    : { 'default'       : { 'cups'       : client.defaultCups,
                                                                    'strength'   : Smarter.strength_to_string(client.defaultStrength),
@@ -333,22 +356,25 @@ class BeverageHandler(GenericAPIHandler):
             if client.isKettle:
                 if beverage == "coffee":
                     client.kettle_heat_coffee()
-                    response = { 'command status'  : Smarter.status_command(client.commandStatus) }
+                    response = { 'command'  : Smarter.status_command(client.commandStatus) }
                 elif beverage == "white":
                     client.kettle_heat_white_tea()
-                    response = { 'command status'  : Smarter.status_command(client.commandStatus) }
+                    response = { 'command'  : Smarter.status_command(client.commandStatus) }
+                elif beverage == "milk":
+                    client.kettle_heat_milk()
+                    response = { 'command'  : Smarter.status_command(client.commandStatus) }
                 elif beverage == "black":
                     client.kettle_heat_black_tea()
-                    response = { 'command status'  : Smarter.status_command(client.commandStatus) }
+                    response = { 'command'  : Smarter.status_command(client.commandStatus) }
                 elif beverage == "green":
                     client.kettle_heat_green_tea()
-                    response = { 'command status'  : Smarter.status_command(client.commandStatus) }
+                    response = { 'command'  : Smarter.status_command(client.commandStatus) }
                 elif beverage == "oelong":
                     client.kettle_heat_oelong_tea()
-                    response = { 'command status'  : Smarter.status_command(client.commandStatus) }
+                    response = { 'command'  : Smarter.status_command(client.commandStatus) }
                 elif beverage == "boil":
                     client.kettle_boil()
-                    response = { 'command status'  : Smarter.status_command(client.commandStatus) }
+                    response = { 'command'  : Smarter.status_command(client.commandStatus) }
                 else:
                     response = { 'error': 'wrong beverage use coffee, white, black, green, oelong, boil' }
                 
@@ -366,7 +392,7 @@ class HeatHandler(GenericAPIHandler):
             client = self.application.clients[ip]
             if client.isKettle:
                 client.kettle_heat(int(temperature),int(keepwarm))
-                response = { 'command status'  : Smarter.status_command(client.commandStatus) }
+                response = { 'command'  : Smarter.status_command(client.commandStatus) }
             else:
                 response = { 'error': 'need kettle' }
         else:
@@ -381,7 +407,7 @@ class FormulaHandler(GenericAPIHandler):
             client = self.application.clients[ip]
             if client.isKettle:
                 client.kettle_formula_heat(int(temperature),int(keepwarm))
-                response = { 'command status'  : Smarter.status_command(client.commandStatus) }
+                response = { 'command'  : Smarter.status_command(client.commandStatus) }
             else:
                 response = { 'error': 'need kettle' }
         else:
@@ -402,7 +428,7 @@ class CalibrateHandler(GenericAPIHandler):
                 client.kettle_calibrate()
                 # fix kettle_calibrate_offbase
                 response = { 'base'            : client.waterSensorBase,
-                             'command status'  : Smarter.status_command(client.commandStatus) }
+                             'command'  : Smarter.status_command(client.commandStatus) }
             else:
                 response = { 'error': 'need kettle' }
         else:
@@ -418,7 +444,7 @@ class CalibrateBaseHandler(GenericAPIHandler):
             if client.isKettle:
                 client.kettle_calibrate_base()
                 response = { 'base'            : client.waterSensorBase,
-                             'command status'  : Smarter.status_command(client.commandStatus) }
+                             'command'  : Smarter.status_command(client.commandStatus) }
             else:
                 response = { 'error': 'need kettle' }
         else:
@@ -434,7 +460,7 @@ class CalibrateStoreBaseHandler(GenericAPIHandler):
             if client.isKettle:
                 client.kettle_calibrate_store_base(Smarter.string_to_watersensor(base))
                 response = { 'base'            : client.waterSensorBase,
-                             'command status'  : Smarter.status_command(client.commandStatus) }
+                             'command'  : Smarter.status_command(client.commandStatus) }
             else:
                 response = { 'error': 'need kettle' }
         else:
@@ -507,7 +533,7 @@ class StoreSettingsHandler(GenericAPIHandler):
         if ip in self.application.clients:
             client = self.application.clients[ip]
             client.device_store_settings(x1,x2,x3,x4)
-            response = { 'command status'  : Smarter.status_command(client.commandStatus) }
+            response = { 'command'  : Smarter.status_command(client.commandStatus) }
         else:
             response = { 'error': 'no device' }
         self.setContentType()
@@ -542,7 +568,7 @@ class SettingsDefaultHandler(GenericAPIHandler):
         if ip in self.application.clients:
             client = self.application.clients[ip]
             client.device_default()
-            response = { 'command status'  : Smarter.status_command(client.commandStatus) }
+            response = { 'command'  : Smarter.status_command(client.commandStatus) }
         else:
             response = { 'error': 'no device' }
         self.setContentType()
@@ -560,7 +586,7 @@ class BrewHandler(GenericAPIHandler):
             client = self.application.clients[ip]
             if client.isCoffee:
                 client.coffee_brew(Smarter.string_to_cups(cups),Smarter.string_to_hotplate(hotplate),Smarter.string_to_bool(grind),Smarter.string_to_strength(strength))
-                response = { 'command status'  : Smarter.status_command(client.commandStatus) }
+                response = { 'command'  : Smarter.status_command(client.commandStatus) }
             else:
                 response = { 'error': 'need coffee machine' }
         else:
@@ -575,7 +601,7 @@ class BrewDefaultHandler(GenericAPIHandler):
             client = self.application.clients[ip]
             if client.isCoffee:
                 client.coffee_brew_default()
-                response = { 'command status'  : Smarter.status_command(client.commandStatus) }
+                response = { 'command'  : Smarter.status_command(client.commandStatus) }
             else:
                 response = { 'error': 'need coffee machine' }
         else:
@@ -591,7 +617,7 @@ class DescaleHandler(GenericAPIHandler):
             if client.isCoffee:
             
                 client.coffee_descale()
-                response = { 'command status'  : Smarter.status_command(client.commandStatus) }
+                response = { 'command'  : Smarter.status_command(client.commandStatus) }
             else:
                 response = { 'error': 'need coffee machine' }
         else:
@@ -608,13 +634,13 @@ class StrengthHandler(GenericAPIHandler):
             if client.isCoffee:
                 if strength == Smarter.CoffeeStringWeak:
                     client.coffee_weak()
-                    response = { 'command status'  : Smarter.status_command(client.commandStatus) }
+                    response = { 'command'  : Smarter.status_command(client.commandStatus) }
                 elif strength == Smarter.CoffeeStringMedium:
                     client.coffee_medium()
-                    response = { 'command status'  : Smarter.status_command(client.commandStatus) }
+                    response = { 'command'  : Smarter.status_command(client.commandStatus) }
                 elif strength == Smarter.CoffeeStringStrong:
                     client.coffee_strong()
-                    response = { 'command status'  : Smarter.status_command(client.commandStatus) }
+                    response = { 'command'  : Smarter.status_command(client.commandStatus) }
                 else:
                     response = { 'error': 'wrong strength use weak, medium or strong' }   
                 
@@ -632,7 +658,7 @@ class CupsHandler(GenericAPIHandler):
             client = self.application.clients[ip]
             if client.isCoffee:
                 client.coffee_cups(Smarter.string_to_cups(cups))
-                response = { 'command status'  : Smarter.status_command(client.commandStatus) }
+                response = { 'command'  : Smarter.status_command(client.commandStatus) }
             else:
                 response = { 'error': 'need coffee machine' }
         else:
@@ -647,7 +673,7 @@ class HotPlateOnHandler(GenericAPIHandler):
             client = self.application.clients[ip]
             if client.isCoffee:
                 client.coffee_hotplate_on(timer)
-                response = { 'command status'  : Smarter.status_command(client.commandStatus) }
+                response = { 'command'  : Smarter.status_command(client.commandStatus) }
             else:
                 response = { 'error': 'need coffee machine' }
         else:
@@ -662,7 +688,7 @@ class HotPlateOffHandler(GenericAPIHandler):
             client = self.application.clients[ip]
             if client.isCoffee:
                 client.coffee_hotplate_off()
-                response = { 'command status'  : Smarter.status_command(client.commandStatus) }
+                response = { 'command'  : Smarter.status_command(client.commandStatus) }
             else:
                 response = { 'error': 'need coffee machine' }
         else:
@@ -678,7 +704,7 @@ class CarafeOnHandler(GenericAPIHandler):
             if client.isCoffee:
                 client.coffee_carafe_required_on()
                 response = { 'carafe' : 'required',
-                             'command status' : Smarter.status_command(client.commandStatus) }
+                             'command' : Smarter.status_command(client.commandStatus) }
             else:
                 response = { 'error': 'need coffee machine' }
         else:
@@ -694,7 +720,7 @@ class CarafeOffHandler(GenericAPIHandler):
             if client.isCoffee:
                 client.coffee_carafe_required_off()
                 response = { 'carafe' : 'optional',
-                             'command status' : Smarter.status_command(client.commandStatus) }
+                             'command' : Smarter.status_command(client.commandStatus) }
             else:
                 response = { 'error': 'need coffee machine' }
         else:
@@ -710,7 +736,7 @@ class CarafeModeHandler(GenericAPIHandler):
             if client.isCoffee:
                 client.coffee_carafe_mode()
                 response = { 'mode'           : 'carafe',
-                             'command status' : Smarter.status_command(client.commandStatus) }
+                             'command' : Smarter.status_command(client.commandStatus) }
             else:
                 response = { 'error': 'need coffee machine' }
         else:
@@ -726,7 +752,7 @@ class CupModeHandler(GenericAPIHandler):
             if client.isCoffee:
                 client.coffee_cup_mode()
                 response = { 'mode'      : 'cup',
-                             'command status' : Smarter.status_command(client.commandStatus) }
+                             'command'   : Smarter.status_command(client.commandStatus) }
             else:
                 response = { 'error': 'need coffee machine' }
         else:
@@ -741,7 +767,7 @@ class BeansHandler(GenericAPIHandler):
             client = self.application.clients[ip]
             if client.isCoffee:
                 client.coffee_beans()
-                response = { 'error'      : 'none' },
+                response = { 'error'      : 'none' }
             else:
                 response = { 'error': 'need coffee machine' }
         else:
@@ -756,7 +782,7 @@ class FilterHandler(GenericAPIHandler):
             client = self.application.clients[ip]
             if client.isCoffee:
                 client.coffee_filter()
-                response = { 'error'      : 'none' },
+                response = { 'command'      : 'success' }
             else:
                 response = { 'error': 'need coffee machine' }
         else:
@@ -775,7 +801,7 @@ class StopHandler(GenericAPIHandler):
         if ip in self.application.clients:
             client = self.application.clients[ip]
             client.device_stop()
-            response = { 'command status' : Smarter.status_command(client.commandStatus) }
+            response = { 'command' : Smarter.status_command(client.commandStatus) }
         else:
             response = { 'error': 'no device' }
         self.setContentType()
@@ -787,7 +813,7 @@ class StartHandler(GenericAPIHandler):
         if ip in self.application.clients:
             client = self.application.clients[ip]
             client.device_start()
-            response = { 'command status' : Smarter.status_command(client.commandStatus) }
+            response = { 'command' : Smarter.status_command(client.commandStatus) }
         else:
             response = { 'error': 'no device' }
         self.setContentType()
@@ -823,7 +849,7 @@ class SubscriptionHandler(GenericAPIHandler):
         self.write(response)
 
 #------------------------------------------------------
-# Remote Blocks
+# REMOTE BLOCKS
 #------------------------------------------------------
 
 
@@ -908,6 +934,7 @@ class RulesHandler(GenericAPIHandler):
             response = { 'error': 'no device' }
         self.setContentType()
         self.write(response)
+
 #------------------------------------------------------
 # Misc
 #------------------------------------------------------
@@ -990,15 +1017,222 @@ class MessagesHandler(GenericAPIHandler):
 
 class VersionHandler(GenericAPIHandler):
     def get(self):
-        response = { 'description': 'iBrew Smarter REST API',
+        response = { 'description': 'iBrew REST API',
                      'version'    : self.application.version,
-                     'copyright'  : { 'year'   : '2016-2017',
+                     'copyright'  : { 'year'   : '2017',
                                       'holder' : 'Tristan Crispijn'
                                     }
                     }
         self.setContentType()
         self.write(response)
 
+#------------------------------------------------------
+# Triggers
+#------------------------------------------------------
+
+
+class TriggerHandler(GenericAPIHandler):
+
+    def get(self, ip, group, trigger, http, url):
+        if ip in self.application.clients:
+            client = self.application.clients[ip]
+            try:
+                print "$$$$$$$"
+                print "$$$$$$$"
+                print http+url
+                print "$$$$$$$"
+                print "$$$$$$$"
+                client.triggerAdd(group,trigger,http+url)
+                response = { 'command' : 'success' }
+            except Exception, e:
+                response = { 'error' : str(e) }
+        else:
+            response = { 'error': 'no device' }
+        self.setContentType()
+        self.write(response)
+
+
+
+class UnTriggerHandler(GenericAPIHandler):
+
+    def get(self, ip, group, trigger):
+        if ip in self.application.clients:
+            client = self.application.clients[ip]
+            try:
+                client.triggerDelete(group,trigger)
+                response = { 'command' : 'success' }
+            except Exception, e:
+                response = { 'error' : str(e) }
+        else:
+            response = { 'error': 'no device' }
+        self.setContentType()
+        self.write(response)
+
+
+class GroupUnTriggerHandler(GenericAPIHandler):
+
+    def get(self, ip, group):
+        if ip in self.application.clients:
+            client = self.application.clients[ip]
+            try:
+                client.triggerGroupDelete(group)
+                response = { 'command' : 'success' }
+            except Exception, e:
+                response = { 'error' : str(e) }
+        else:
+            response = { 'error': 'no device' }
+        self.setContentType()
+        self.write(response)
+
+
+
+class TriggersHandler(GenericAPIHandler):
+
+    def get(self, ip):
+        if ip in self.application.clients:
+            client = self.application.clients[ip]
+            response = {}
+            for j in client.triggersGroups:
+                tk = {}
+                one = False
+                two = False
+                for i in Smarter.triggersKettle:
+                    action = client.triggerGet(j[0],Smarter.triggersKettle[i][0].upper())
+                    if action != "":
+                        tk[Smarter.triggersKettle[i][0].upper()] = action
+                        one = True
+                tc = {}
+                for i in Smarter.triggersCoffee:
+                    action = client.triggerGet(j[0],Smarter.triggersCoffee[i][0].upper())
+                    if action != "":
+                        two = True
+                        tc[Smarter.triggersCoffee[i][0].upper()] = action
+                if one and two:
+                    response[j[0]] = { 'iKettle2.0' : tk, 'SmarterCoffee' : tc }
+                elif one:
+                    response[j[0]] = { 'iKettle2.0' : tk }
+                elif two:
+                    response[j[0]] = { 'SmarterCoffee' : tc }
+        else:
+            response = { 'error': 'no device' }
+        self.setContentType()
+        self.write(response)
+
+
+class TriggersGroupHandler(GenericAPIHandler):
+
+    def get(self, ip, group):
+        if ip in self.application.clients:
+            if group[-1] == '/':
+                group = group[:-1]
+
+            client = self.application.clients[ip]
+            if client.isTriggersGroup(group):
+                response = {}
+                j = client.getGroup(group)
+                tk = {}
+                one = False
+                two = False
+                for i in Smarter.triggersKettle:
+                    action = client.triggerGet(j[0],Smarter.triggersKettle[i][0].upper())
+                    if action != "":
+                        tk[Smarter.triggersKettle[i][0].upper()] = action
+                        one = True
+                tc = {}
+                for i in Smarter.triggersCoffee:
+                    action = client.triggerGet(j[0],Smarter.triggersCoffee[i][0].upper())
+                    if action != "":
+                        two = True
+                        tc[Smarter.triggersCoffee[i][0].upper()] = action
+                if one and two:
+                    response = { 'iKettle2.0' : tk, 'SmarterCoffee' : tc }
+                elif one:
+                    response = { 'iKettle2.0' : tk }
+                elif two:
+                    response = { 'SmarterCoffee' : tc }
+            else:
+                response = { 'error': 'trigger group not found' }
+        else:
+            response = { 'error': 'no device' }
+        self.setContentType()
+        self.write(response)
+
+#------------------------------------------------------
+# Legacy
+#------------------------------------------------------
+
+def encodeLegacy(client):
+    cc = client.connected
+    if client.simulation or client.bridge:
+        cc = True
+    
+    t = "Off"
+    if client.temperatureSelect:
+        t = SmarterLegacy.string_response(client.temperature)
+    w = "Off"
+    if client.keepwarmSelect:
+        t = SmarterLegacy.string_response(client.keepwarm)
+
+    mode = 'normal'
+    if client.simulation:
+        mode = 'simulation'
+    elif client.emulation:
+        mode = 'emulation'
+    elif client.bridge:
+        mode = 'bridge'
+    return { 'appliance' : { 'model'       : 'iKettle',
+                             'mode'        : mode,
+                             'firmware'    : { 'version'   : 1,
+                                               'certified' : 'iBrew certified firmware'
+                                             },
+                             'network'     : { 'connection'  : { 'host'        : client.host,
+                                                                 'port'        : client.port,
+                                                                 'active'      : cc
+                                                               },
+                                               'relay'       : { 'bind'   : client.relayHost,
+                                                                 'port'   : client.relayPort,
+                                                                 'active' : client.relay
+                                             },
+                                                #  'relay'       : encodeRelay(client.remoteRelay,client.remoteRelayVersion,client.remoteRelayHost),
+                                             }
+  
+                           },
+             'sensors'   : { 'heater'  : client.heaterOn,
+                             'warming' : client.keepwarmOn,
+                             'onbase'  : client.onBase
+                           },
+             'status'    : { 'overheated'       : client.overheated,
+                             'keepwarmfinished' : client.keepwarmFinished,
+                             'heatingfinished'  : client.heatingFinished
+                           },
+             'settings'  : { 'temperature' : t,
+                             'keepwarm'    : w
+                           },
+
+           }
+
+
+class LegacyHandler(GenericAPIHandler):
+
+    def get(self, ip, command):
+        if ip in self.application.clients:
+            client = self.application.clients[ip]
+            if client.isKettle:
+                try:
+                    print command
+                    if command != "":
+                        client.iKettle.send(command)
+                    response = encodeLegacy(client.iKettle)
+                # FIX for right exception
+                except Exception, e:
+                    print str(e)
+                    response = { 'error' : 'failed to send command' }
+            else:
+                response = { 'error': 'need kettle' }
+        else:
+            response = { 'error': 'no device' }
+        self.setContentType()
+        self.write(response)
 
 
 #------------------------------------------------------
@@ -1008,7 +1242,7 @@ class VersionHandler(GenericAPIHandler):
 
 class iBrewWeb(tornado.web.Application):
 
-    version = '0.82'
+    version = '0.90a'
     
     def start(self):
         tornado.ioloop.IOLoop.instance().start()
@@ -1055,7 +1289,7 @@ class iBrewWeb(tornado.web.Application):
                 try:
                     if self.dump:
                         logging.info("[" + device[0] + "] Adding Web Device")
-                    client = SmarterClient(AppFolders.settings() + "/")
+                    client = SmarterInterface(AppFolders.settings() + "/")
                     client.events = self.events
                     client.deviceId = device[1]
                     client.device = Smarter.device_to_string(device[1])
@@ -1086,9 +1320,10 @@ class iBrewWeb(tornado.web.Application):
                 try:
                     if self.dump:
                         logging.info("[" + ip + "] Adding Web Device")
-                    client = SmarterClient(AppFolders.settings() + "/")
+                    client = SmarterInterface(AppFolders.settings() + "/")
                     client.events = self.events
                     client.setHost(self.host)
+                    client.port = self.sport
                     client.dump = self.dump
                     client.dump_status = self.dump
                     client.connect()
@@ -1101,9 +1336,9 @@ class iBrewWeb(tornado.web.Application):
                     client.disconnect()
                     pass # raise SmarterError(WebServerListen,"Web Server: Couldn't open socket on port" + str(self.port))
 
-
-        self.threadAutoConnect = threading.Timer(15, self.autoconnect)
-        self.threadAutoConnect.start()
+        if self.isRunning:
+            self.threadAutoConnect = threading.Timer(15, self.autoconnect)
+            self.threadAutoConnect.start()
 
 
     def __init__(self,webroot=""):
@@ -1128,7 +1363,7 @@ class iBrewWeb(tornado.web.Application):
             pass
         try:
             for ip in self.clients:
-                self.clients[ip].stop()
+                self.clients[ip].trash()
         except Exception:
             raise SmarterError(WebServerStopMonitor,"Web Server: Could not stop monitors")
             
@@ -1155,27 +1390,30 @@ class iBrewWeb(tornado.web.Application):
             raise SmarterError(WebServerStopWeb,"Web Server: Could not stop webserver")
 
 
-    def run(self,port,dump=False,host=""):
+    def run(self,bind="",port=Smarter.Port-1,dump=False,host="",sport=Smarter.Port):
         self.port = port
         self.isRunning = False
         self.dump = dump
         self.host = host
+        self.sport = port
+        self.bind = bind
         
         try:
-            self.listen(self.port, no_keep_alive = True)
+        
+            self.listen(self.port, no_keep_alive = True, address=self.bind)
         except Exception:
-            logging.error("Web Server: Couldn't open socket on port " + str(self.port))
-            raise SmarterError(WebServerListen,"Web Server: Couldn't open socket on port " + str(self.port))
+            logging.error("Web Server: Couldn't open socket on port " + self.bind + ":" +str(self.port))
+            raise SmarterError(WebServerListen,"Web Server: Couldn't open socket on port " + self.bind + ":" + str(self.port))
 
         try:
             self.autoconnect()
         except KeyboardInterrupt:
             self.kill()
-            raise SmarterError(WebServerStartFailed,"Web Server: Couldn't start on port " + str(self.port))
+            raise SmarterError(WebServerStartFailed,"Web Server: Couldn't start on port "+ self.bind + ":" + str(self.port))
             
         try:
             settings = {
-                "debug"         : True,
+                "debug"         : self.dump,
                 "template_path" : os.path.join(AppFolders.appBase(), 'web'),
                 "static_path"   : os.path.join(AppFolders.appBase(), 'resources'),
                 "static_url_prefix" : self.webroot + "/resources/", }
@@ -1184,6 +1422,7 @@ class iBrewWeb(tornado.web.Application):
                 (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/subscribe/?",SubscriptionHandler),
                 (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/status/?",DeviceHandler),
                 (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/calibrate/?",CalibrateHandler),
+                (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/legacy/(|status|5|10|20|warm|65|80|95|100|heat|stop)/?",LegacyHandler),
                 (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/calibrate/base/?",CalibrateBaseHandler),
                 (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/calibrate/base/([0-9]+)/?",CalibrateStoreBaseHandler),
 
@@ -1203,7 +1442,7 @@ class iBrewWeb(tornado.web.Application):
                 (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/hotplate/off/?",HotPlateOffHandler),
                 (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/cups/([0-9]+)/?",CupsHandler),
                 (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/(weak|normal|strong)/?",StrengthHandler),
-                (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/(boil|coffee|white|green|black|oelong)/?",BeverageHandler),
+                (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/(boil|coffee|white|green|black|oelong|milk)/?",BeverageHandler),
                 (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/scan/?",WifiScanHandler),
                 (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/join/(.+)/(.*)/?",WifiJoinHandler),
                 (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/direct/?",WifiDirectHandler),
@@ -1214,10 +1453,16 @@ class iBrewWeb(tornado.web.Application):
                 (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/statistics/?",StatsHandler),
 
                 (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/rules/?",RulesHandler),
-                (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/block/(.+)/?",BlockHandler),
-                (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/unblock/(.+)/?",UnblockHandler),
-                (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/patches/?",PatchesHandler),
-                (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/patch/(.+)/?",PatchHandler),
+                (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/rules/block/(.+)/?",BlockHandler),
+                (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/rules/unblock/(.+)/?",UnblockHandler),
+#                (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/rules/patches/?",PatchesHandler),
+                (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/rules/patch/(.+)/?",PatchHandler),
+                
+                (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/triggers/(.+)/add/(.+)/(http://|https://)(.*)",TriggerHandler),
+                (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/triggers/(.+)/delete/?",GroupUnTriggerHandler),
+                (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/triggers/(.+)/delete/(.+)/?",UnTriggerHandler),
+                (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/triggers/(.+)/?",TriggersGroupHandler),
+                (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/triggers/?",TriggersHandler),
                 
                 (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/settings/?",SettingsHandler),
                 (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/default/?",SettingsDefaultHandler),
@@ -1226,7 +1471,7 @@ class iBrewWeb(tornado.web.Application):
                 (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/settings/([0-9]+)/([0-9]+)/(false|true|on|off|beans|filter)/(weak|medium|strong)/?",StoreSettingsHandler),
                 (self.webroot + r"/api/([0-9]+.[0-9]+.[0-9]+.[0-9]+)/settings/([0-9]+)/([0-9]+)/(false|true|on|off|normal|formula)/([0-9]+)/?",StoreSettingsHandler),
                 (self.webroot + r"/api/version/?",VersionHandler),
-                (self.webroot + r"/api/devices/?",DevicesHandler),
+                (self.webroot + r"/api/appliances/?",DevicesHandler),
                 (self.webroot + r"/api/joke/?",JokeHandler),
                 (self.webroot + r"/api/messages/?",MessagesHandler),
                 (self.webroot + r"/api/?.*",UnknownHandler),
@@ -1254,7 +1499,7 @@ class iBrewWeb(tornado.web.Application):
         except Exception:
             print(traceback.format_exc())
             self.kill()
-            raise SmarterError(WebServerStartFailed,"Web Server: Couldn't start on port " + str(self.port))
+            raise SmarterError(WebServerStartFailed,"Web Server: Couldn't start on port " + self.bind + ":" + str(self.port))
 
         bonjour = iBrewBonjourThread(self.port)
         bonjour.start()
@@ -1264,7 +1509,8 @@ class iBrewWeb(tornado.web.Application):
             self.thread.start()
         except Exception:
             self.kill()
-            raise SmarterError(WebServerStartFailed,"Web Server: Couldn't start on port " + str(self.port))
+            raise SmarterError(WebServerStartFailed,"Web Server: Couldn't start on port " + self.bind + ":" + str(self.port))
 
 
         self.isRunning = True
+        self.autoconnect()

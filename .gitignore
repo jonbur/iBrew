@@ -28,4 +28,9 @@ distro/win/LICENSE
 pyinstaller/
 
 release/
+
+dmg/
+
 *.dmg
+
+*.exe

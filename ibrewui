@@ -2,6 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import sys
+
+reload(sys)  
+sys.setdefaultencoding('utf8')
+
 import os
 import platform
 import signal
@@ -23,7 +27,7 @@ from iBrewWeb import *
 #
 # Copyright © 2016 Tristan (@monkeycat.nl)
 #
-# The conundrum struggle
+# The Dream Tea
 #------------------------------------------------------
 
 class Launcher():    
@@ -43,7 +47,7 @@ class Launcher():
     def run(self):
         
         try:
-            self.web.run(2080,True)
+            self.web.run("",2080,True)
         except Exception, e:
             logging.debug(e)
             logging.info("iBrew: Failed to run Web Interface & REST API on port 2080")
@@ -68,11 +72,7 @@ class Launcher():
                     # do not touch if its not a symlink...
                     if os.path.islink("/usr/local/bin/ibrew"):
                         os.remove("/usr/local/bin/ibrew")
-                        os.symlink(AppFolders.appBase()+"/iBrewConsole","/usr/local/bin/ibrew")
-                    if os.path.islink("/usr/local/bin/ibrewlegacy"):
-                        os.remove("/usr/local/bin/ibrewlegacy")
-                        os.symlink(AppFolders.appBase()+"/iBrewLegacyConsole","/usr/local/bin/ibrewlegacy")
-
+                    os.symlink(AppFolders.appBase()+"/iBrewConsole","/usr/local/bin/ibrew")
                 except Exception:
                     pass
    

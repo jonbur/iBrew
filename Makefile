@@ -1,15 +1,18 @@
 all:
-	@echo "iBrew setup (windows, linux & mac)"
-	@echo use \"make setup\" to fetch requirements (source only no bonjour)
+	@echo "iBrew setup (Windows, Linux & macOS)"
+	@echo use \"make setup\" "to fetch requirements (source only no bonjour)"
 	@echo use \"make cleanlin\" to clean temp files
 	@echo use \"make cleanmac\" to clean temp files
 	@echo use \"make cleanwin\" to clean temp files
-	@echo use \"make setuplin\" to fetch additional linux requirements
-	@echo use \"make setupmac\" to fetch additional mac requirements
-	@echo use \"make setupwin\" to fetch additional windows requirementse
-	@echo use \"make mac\" to make a mac release
-	@echo use \"make win\" to make a windows release
+	@echo use \"make setuplin\" to fetch additional Linux requirements
+	@echo use \"make setupmac\" to fetch additional macOS requirements
+	@echo use \"make setupwin\" to fetch additional Windows requirementse
+	@echo use \"make bonjour\" to install bonjour package for macOS and Linux 
+	@echo use \"make bonjourwin\" to install bonjour package for Windows
+	@echo use \"make mac\" to make a macOS release
+	@echo use \"make win\" to make a Windows release
 	@echo use \"make readme\" to create a new README.md 
+
 
 mac:	cleanmac buildmac diskimage
 
@@ -25,14 +28,12 @@ installer:
 
 buildwin:
 	@echo iBrew: Building Windows package    
-	@pyinstaller -c --version-file distro\win\version.py -i resources\favicon.ico ibrewlegacy
 	@pyinstaller -c --version-file distro\win\version.py -i resources\favicon.ico ibrew
 	@pyinstaller -w --version-file distro\win\version.py -i resources\favicon.ico ibrewui
 	@mkdir dist\ibrew\resources
 	@mkdir dist\ibrew\web
 	@xcopy /S resources dist\ibrew\resources
 	@xcopy /S web dist\ibrew\web
-	@copy /Y dist\ibrewlegacy\*.* dist\ibrew
 	@copy /Y dist\ibrewui\*.* dist\ibrew
 	@copy LICENSE dist\ibrew
 
@@ -60,9 +61,9 @@ cleanlin:
 	@rm -rf test
 	@rm -rf release
 
-setuplin: setup bonjour
+setuplin: setup 
 
-setupwin: setup packwin bonjourwin 
+setupwin: setup packwin 
 
 packwin:
 	@pip install win-inet-pton
@@ -72,13 +73,18 @@ setupmac: setup packmac bonjour pyinstaller
 packmac:
 	@pip install -q -r distro/mac/requirements.txt
 
+bonjourmac: bonjour
+
+bonjourlin: bonjour
+
 bonjour:
+	@echo  MAKE SURE you have bonjour installed before running this	
 	@curl https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/pybonjour/pybonjour-1.1.1.zip > pybonjour-1.1.1.zip
 	@pip install pybonjour-1.1.1.zip
 	@rm pybonjour-1.1.1.zip
 
 bonjourwin:
-	@echo MAKE SURE you have iTUNES or Bonjour 3.0 sdk installed
+	@echo MAKE SURE you have iTUNES or Bonjour 3.0 sdk installed before running this
 	@powershell -command "& { iwr https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/pybonjour/pybonjour-1.1.1.zip -OutFile pybonjour-1.1.1.zip }"
 	@pip install pybonjour-1.1.1.zip
 	@del pybonjour-1.1.1.zip
@@ -100,6 +106,7 @@ cleanmac:
 	@rm -rf test
 	@rm -rf dist
 	@rm -rf release
+	@rm -rf dmg
 	
 buildmac:
 	@echo iBrew: Building MacOS package
@@ -107,15 +114,12 @@ buildmac:
 	@echo Please install upx with: brew install upx
 	@pyinstaller ibrewui -s -w -n iBrew --noupx
 	@pyinstaller ibrew -s -w -n iBrewConsole --noupx
-	@pyinstaller ibrewlegacy -s -w -n iBrewLegacyConsole --noupx
 	@cp -a resources dist/iBrew.app/Contents/MacOS
 	@cp -a web dist/iBrew.app/Contents/MacOS
 	@cp distro/mac/Info.plist dist/iBrew.app/Contents/
 	@mv dist/iBrewConsole.app/Contents/MacOS/iBrewConsole dist/iBrew.app/Contents/MacOS
-	@mv dist/iBrewLegacyConsole.app/Contents/MacOS/iBrewLegacyConsole dist/iBrew.app/Contents/MacOS
 	@cp distro/mac/iBrew.icns dist/iBrew.app/Contents/Resources/icon-windowed.icns
 	@rm -rf dist/iBrewConsole.app
-	@rm -rf dist/iBrewConsoleLegacy.app
 	@mkdir -p test
 	@mv dist/iBrew.app test
 	# @rm -rf dist
@@ -132,7 +136,7 @@ diskimage:
 	
 	##generate raw disk image
 	rm -f iBrew.dmg
-	hdiutil create -srcfolder dmg/iBrew -volname iBrew-0.5.0 -format UDRW -ov raw-iBrew.dmg	
+	hdiutil create -srcfolder dmg/iBrew -volname iBrew-0.5.0 -format UDRW -ov dist/raw-iBrew.dmg	
 
 	#remove working files and folders
 	rm -rf dmg/iBrew
@@ -141,7 +145,7 @@ diskimage:
 	
 	# remount it so we can set the volume icon properly
 	mkdir -p dmg/iBrew
-	hdiutil attach raw-iBrew.dmg -mountpoint dmg/iBrew
+	hdiutil attach dist/raw-iBrew.dmg -mountpoint dmg/iBrew
 	SetFile -a C dmg/iBrew
 	
 	hdiutil detach dmg/iBrew
@@ -149,10 +153,10 @@ diskimage:
 	
 	# convert the raw image
 	rm -f iBrew.dmg
-	hdiutil convert raw-iBrew.dmg -format UDZO -o iBrew.dmg
-	rm -f raw-iBrew.dmg
+	hdiutil convert dist/raw-iBrew.dmg -format UDZO -o dist/iBrew.dmg
+	rm -f dist/raw-iBrew.dmg
 	
 	#move finished product to release folder
 	mkdir -p release
-	mv iBrew.dmg release
+	mv dist/iBrew.dmg release
 	

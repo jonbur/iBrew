@@ -13,16 +13,265 @@ from operator import itemgetter
 #------------------------------------------------------
 # SMARTER PROTOCOL INTERFACE
 #
-# Python protocol interface to iKettle 2.0 & Smarter Coffee Appliances
+# Python protocol interface to Smarter Appliances
 #
 # https://github.com/Tristan79/iBrew
 #
-# Copyright © 2016-2017 Tristan (@monkeycat.nl). All Rights Reserved
+# Copyright © 2017 Tristan (@monkeycat.nl). All Rights Reserved
 #
-# The conundrum struggle
+# The Dream Tea
 #------------------------------------------------------
 
-# In the end I should have made classes of the types...
+# In the end I should have made classes of the types... split the simulator, firewall, etc,
+# And yes, i know i really made a mess of it, it was a good learning experience.
+# How divide and conquers wins, but it's HOW you divide! Should have build it differently, o well, next time!
+
+class SmarterProtocolLegacy:
+
+    #------------------------------------------------------
+    # LEGACY
+    #------------------------------------------------------
+
+
+    def protocol(self):
+        rj = 27
+        print
+        print "Commands".rjust(rj-1)
+        print "".rjust(rj-1,"_")
+        print ("[" + self.commandHandshake + "\\n] ").rjust(rj) + self.textGetHandshake
+        print ("[" + self.commandStatus + "\\n] ").rjust(rj) + self.textGetStatus
+        print ("[" + self.commandWarm5m + "\\n] ").rjust(rj) + self.textSelectWarm5m
+        print ("[" + self.commandWarm10m + "\\n] ").rjust(rj) + self.textSelectWarm10m
+        print ("[" + self.commandWarm20m + "\\n] ").rjust(rj) + self.textSelectWarm20m
+        print ("[" + self.commandWarm + "\\n] ").rjust(rj) + self.textWarm
+        print ("[" + self.command65c + "\\n] ").rjust(rj) + self.textSelect65c
+        print ("[" + self.command80c + "\\n] ").rjust(rj) + self.textSelect80c
+        print ("[" + self.command95c + "\\n] ").rjust(rj) + self.textSelect95c
+        print ("[" + self.command100c + "\\n] ").rjust(rj) + self.textSelect100c
+        print ("[" + self.commandHeat + "\\n] ").rjust(rj) + self.textHeat
+        print ("[" + self.commandStop + "\\n] ").rjust(rj) + self.textStop
+        print
+        print
+        print "Responses".rjust(rj-1)
+        print "".rjust(rj-1,"_")
+        print ("[" + self.responseHandshake + "\\r] ").rjust(rj) + self.textHandshake
+        print ("[" + self.responseStatus + "\\r] ").rjust(rj) + self.textStatus
+        print ("[" + self.status65c + "\\r] ").rjust(rj) + self.text65c
+        print ("[" + self.status80c + "\\r] ").rjust(rj) + self.text80c
+        print ("[" + self.status95c + "\\r] ").rjust(rj) + self.text95c
+        print ("[" + self.status100c + "\\r] ").rjust(rj) + self.text100c
+        print ("[" + self.statusWarm5m + "\\r] ").rjust(rj) + self.textWarm5m
+        print ("[" + self.statusWarm10m + "\\r] ").rjust(rj) + self.textWarm10m
+        print ("[" + self.statusWarm20m + "\\r] ").rjust(rj) + self.textWarm20m
+        print ("[" + self.statusReady + "\\r] ").rjust(rj) + self.textReady
+        print ("[" + self.statusHeating + "\\r] ").rjust(rj) + self.textHeating
+        print ("[" + self.statusHeated + "\\r] ").rjust(rj) + self.textHeated
+        print ("[" + self.statusOverheat + "\\r] ").rjust(rj) + self.textOverheat
+        print ("[" + self.statusWarmFinished + "\\r] ").rjust(rj) + self.textWarmFinished
+        print ("[" + self.statusWarm + "\\r] ").rjust(rj) + self.textWarm
+        print ("[" + self.statusKettleRemoved + "\\r] ").rjust(rj) + self.textKettleRemoved
+        print
+        print "Default 192.168.4.1:2000"
+        print
+        print "The protocol build up a connection by sending an offer hand command, and receiving the handshake response"
+        print "After that you can send commands and you will receive asynchronious status updates if the kettle changes state"
+        print
+        print "Send HELLOKETTLE\\n receive HELLOAPP\\r"
+        print
+        print
+        print "You might receive other HELLOAPP commands at later points as other apps on the network connect to the kettle."
+    
+    Port       = 2000
+    DirectHost = "192.168.4.1"
+
+    commandHandshake    = "HELLOKETTLE"
+    responseHandshake   = "HELLOAPP"
+
+    # Command messages
+    commandStatus       = "get sys status"
+    commandHeat         = "set sys output 0x4"
+    command65c          = "set sys output 0x200"
+    command80c          = "set sys output 0x4000"
+    command95c          = "set sys output 0x2"
+    command100c         = "set sys output 0x80"
+    commandWarm5m       = "set sys output 0x8005"
+    commandWarm10m      = "set sys output 0x8010"
+    commandWarm20m      = "set sys output 0x8020"
+    commandWarm         = "set sys output 0x8"
+    commandStop         = "set sys output 0x0"
+
+    # Command text
+    textHeat            = "Start heating water"
+    textStartWarm         = "Start keep water warm"
+    textStop            = "Stop heating water"
+    textStatus          = "Status"
+    textHandshake       = "Handshake"
+    textGetHandshake    = "Offer hand"
+
+    # Shared between status and command
+    text100c            = "100°C selected"
+    text95c             = "95°C selected"
+    text80c             = "80°C selected"
+    text65c             = "65°C selected"
+    textWarm            = "Keep water warm" # for 30 minutes???
+    textWarm5m          = "Keep water warm timer is set to 5 minutes"
+    textWarm10m         = "Keep water warm timer is set to 10 minutes"
+    textWarm20m         = "Keep water warm timer is set to 20 minutes"
+
+    textGetStatus          = "Get status"
+    textSelect100c      = "Select 100°C"
+    textSelect95c       = "Select 95°C"
+    textSelect80c       = "Select 80°C"
+    textSelect65c       = "Select 65°C"
+    textSelectWarm5m    = "Select keep water warm timer is set to 5 minutes"
+    textSelectWarm10m   = "Select keep water warm timer is set to 10 minutes"
+    textSelectWarm20m   = "Select keep water warm timer is set to 20 minutes"
+
+    # Status text
+    textHeating         = "Heating water"
+    textReady           = "Ready"
+    textHeated          = "Water heated"
+    textOverheat        = "Kettle overheated"
+    textKettleRemoved   = "Kettle removed"
+    textWarmFinished    = "Keep water warm finished"
+
+    # Status messages
+    status100c          = "sys status 0x100"
+    status95c           = "sys status 0x95"
+    status80c           = "sys status 0x80"
+    status65c           = "sys status 0x65"
+    statusWarm          = "sys status 0x11"
+    statusWarmFinished  = "sys status 0x10"
+    statusHeating       = "sys status 0x5"
+    statusReady         = "sys status 0x0"
+    statusWarm5m        = "sys status 0x8005"
+    statusWarm10m       = "sys status 0x8010"
+    statusWarm20m       = "sys status 0x8020"
+    statusHeated        = "sys status 0x3"
+    statusOverheat      = "sys status 0x2"
+    statusKettleRemoved = "sys status 0x1"
+    
+    responseStatus      = "sys status key="
+
+    def string_responseStatus(self,status):
+
+        def is_set(x, n):
+            return x & 2**n != 0
+
+        if len(self.responseStatus) == len(status):
+            return self.textReady
+
+        statusdata = Smarter.raw_to_number(status[len(self.responseStatus)])
+
+        statustext = ""
+        if is_set(statusdata,0):
+            statustext += self.textHeating + " "
+        if is_set(statusdata,1):
+            statustext += self.textWarm + " "
+        if is_set(statusdata,2):
+            statustext += self.text65c + " "
+        if is_set(statusdata,3):
+            statustext += self.text80c + " "
+        if is_set(statusdata,4):
+            statustext += self.text95c + " "
+        if is_set(statusdata,5):
+            statustext += self.text100c + " "
+        if is_set(statusdata,6):
+            statustext += "Unknown kettle status 6! Help! Please post an issues on GitHub" + str([status]) + " "
+        if is_set(statusdata,7):
+            statustext += "Unknown kettle status 7! Help! Please post an issues on GitHub" + str([status]) + " "
+        return statustext.strip()
+
+    def string_response(self,status):
+        if status[0:len(self.responseStatus)] == self.responseStatus:
+            return self.string_responseStatus(status)
+        elif status == self.status100c:
+            return self.text100c
+        elif status == self.status95c:
+            return self.text95c
+        elif status == self.status80c:
+            return self.text80c
+        elif status == self.status65c:
+            return self.text65c
+        elif status == self.statusWarm:
+            return self.textWarm
+        elif status == self.statusWarmFinished:
+            return self.textWarmFinished
+        elif status == self.statusHeating:
+            return self.textHeating
+        elif status == self.statusReady:
+            return self.textReady
+        elif status == self.statusWarm5m:
+            return self.textWarm5m
+        elif status == self.statusWarm10m:
+            return self.textWarm10m
+        elif status == self.statusWarm20m:
+            return self.textWarm20m
+        elif status == self.responseHandshake:
+            return self.textHandshake
+        elif status == self.statusHeated:
+            return self.textHeated
+        elif status == self.statusOverheat:
+            return self.textOverheat
+        elif status == self.statusKettleRemoved:
+            return self.textKettleRemoved
+        else:
+            return "Unknown status! Help! Please post an issues on GitHub" + str([status])
+
+    def command_to_string(self,command):
+        if SmarterLegacy.commandStop == command:      return "Stop"
+        elif SmarterLegacy.command65c == command:     return "65"
+        elif SmarterLegacy.command80c == command:     return "80"
+        elif SmarterLegacy.command95c == command:     return "95"
+        elif SmarterLegacy.command100c == command:    return "100"
+        elif SmarterLegacy.commandWarm == command:    return "Warm"
+        elif SmarterLegacy.commandHeat == command:    return "Heat"
+        elif SmarterLegacy.commandWarm5m == command:  return "5"
+        elif SmarterLegacy.commandWarm10m == command: return "10"
+        elif SmarterLegacy.commandWarm20m == command: return "20"
+        elif SmarterLegacy.commandStatus == command:  return "Status"
+        elif SmarterLegacy.commandHandshake == command:return "Handshake"
+        else:
+            raise SmarterErrorOld("Unknown command: (%s)" % command)
+
+    def string_to_command(self,string):
+        action = string.lower()
+        if action == "stop":                        return SmarterLegacy.commandStop
+        elif action == "heat" or action == "start": return SmarterLegacy.commandHeat
+        elif action == "status":                    return SmarterLegacy.commandStatus
+        elif action == "65":                        return SmarterLegacy.command65c
+        elif action == "80":                        return SmarterLegacy.command80c
+        elif action == "95":                        return SmarterLegacy.command95c
+        elif action == "100":                       return SmarterLegacy.command100c
+        elif action == "handshake":                 return SmarterLegacy.commandHandshake
+        elif action == "warm":                      return SmarterLegacy.commandWarm
+        elif action == "5":                         return SmarterLegacy.commandWarm5m
+        elif action == "10":                        return SmarterLegacy.commandWarm10m
+        elif action == "20":                        return SmarterLegacy.commandWarm20m
+        else:
+            raise SmarterErrorOld("Unknown command: (%s)" % action)
+
+    def command_to_commandText(self,command):
+        return self.string_to_commandText(self.command_to_string(command))
+
+    def string_to_commandText(self,string):
+        action = string.lower()
+        if action == "stop":                        return SmarterLegacy.textStop
+        elif action == "heat" or action == "start": return SmarterLegacy.textHeat
+        elif action == "status":                    return SmarterLegacy.textGetStatus
+        elif action == "65":                        return SmarterLegacy.textSelect65c
+        elif action == "80":                        return SmarterLegacy.textSelect80c
+        elif action == "95":                        return SmarterLegacy.textSelect95c
+        elif action == "handshake":                 return SmarterLegacy.textGetHandshake
+        elif action == "100":                       return SmarterLegacy.text100c
+        elif action == "warm":                      return SmarterLegacy.textStartWarm
+        elif action == "5":                         return SmarterLegacy.textSelectWarm5m
+        elif action == "10":                        return SmarterLegacy.textSelectWarm10m
+        elif action == "20":                        return SmarterLegacy.textSelectWarm20m
+        else:
+            raise SmarterErrorOld("Unknown command: (%s)" % action)
+
+
 
 #------------------------------------------------------
 # EXCEPTION CLASS
@@ -61,9 +310,8 @@ WebServerStopMonitor           = 102
 WebServerStopMonitorWeb        = 103
 WebServerStopWeb               = 104
 
-SmarterClientFailedStop        = 105
-SmarterClientFailedStopThread  = 106
-
+SmarterInterfaceFailedStop        = 105
+SmarterInterfaceFailedStopThread  = 106
 
 class SmarterError(Exception):
 
@@ -80,13 +328,16 @@ class SmarterErrorOld(Exception):
         print(traceback.format_exc())
         self.msg = msg
 
-
 #------------------------------------------------------
 # PROTOCOL CLASS
 #------------------------------------------------------
 
-
 class SmarterProtocol:
+
+    #------------------------------------------------------
+    # DEFAULT CONSTANTS
+    #------------------------------------------------------
+
 
     DirectHost = "192.168.4.1"
     Port       = 2081
@@ -1127,12 +1378,12 @@ class SmarterProtocol:
 
 
     def string_to_bool(self,boolean):
-        if boolean.lower() == "on" or boolean.lower() == "true" or boolean.lower() == "1" or boolean.lower() == "enabled":
+        if boolean.lower() == "on" or boolean.lower() == "true" or boolean.lower() == "1" or boolean.lower() == "enabled" or boolean.lower() == "active" or boolean.lower() == "yes":
             return True
-        if boolean.lower() == "off" or boolean.lower() == "false" or boolean.lower() == "0" or boolean.lower() == "disabled":
+        if boolean.lower() == "off" or boolean.lower() == "false" or boolean.lower() == "0" or boolean.lower() == "disabled" or boolean.lower() == "not" or boolean.lower() == "no":
             return False
         else:
-            raise SmarterErrorOld("Unknown boolean [true,false 1,0 on,off enabled,disabled]: " + str(boolean))
+            raise SmarterErrorOld("Unknown boolean [true,false 1,0 on,off enabled,disabled yes,no]: " + str(boolean))
 
     #------------------------------------------------------
     # CUPS ARGUMENT WRAPPER
@@ -2353,3 +2604,4 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
                """
 
 Smarter = SmarterProtocol()
+SmarterLegacy = SmarterProtocolLegacy()

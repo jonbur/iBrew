@@ -1,6 +1,20 @@
-# iBrew: The conundrum struggle!
+# iBrew: The Dream Tea!
 
 iKettle, [iKettle 2.0](http://smarter.am/ikettle) and [Smarter Coffee](http://smarter.am/coffee) Interface
+
+## Needed remote access to iKettle 1, to test new code!
+
+To test and finish: 
+  * iKettle Emulation (emulates an iKettle with an iKettle 2.0)
+  * iKettle Brigde (connect to an iKettle and use it if it was an iKettle 2.0)
+  * Figure out to correct responses
+  
+Such that all features of iBrew are available (if supported) for the original iKettle!
+
+So if you have an original iKettle filled up with water! And some time to spare!
+
+Contact <tristan@monkeycat.nl>!
+
 
 ## Downloads
   * [Windows](https://dl.dropboxusercontent.com/u/12474226/iBrew.exe)
@@ -75,10 +89,11 @@ It features!
 __For smarthome fans!__
  * Command Line
  * HomeKit support 
+ * Relay
+ * Simulator
 
 #### Usefull links
-Check out [ikettle-brute-forcer](https://github.com/C0smos/ikettle-brute-forcer) and the iKettle simulator [kettle-fake](https://github.com/jerrosenberg/kettle-fake)
-
+Check out [ikettle-brute-forcer](https://github.com/C0smos/ikettle-brute-forcer)
         
 ### iBrew in the Media
 [The iKettle, the Eleven-Hour Struggle to Make a Cup of Tea, and Why It Was All About Data, Analytics and Connecting Things Together](https://medium.com/mark-rittman/the-story-behind-the-ikettle-the-eleven-hour-struggle-to-make-a-cup-of-tea-and-why-it-was-all-769144d12d7#.h62foolse) 
@@ -139,7 +154,12 @@ See Pi section.
 
 ### Source
 
-You can run iBrew on systems that run python 2.7. Download and unpack the [source](https://github.com/Tristan79/iBrew/archive/master.zip), download it from github using [Github Desktop](https://desktop.github.com) or manually `git clone https://github.com/Tristan79/iBrew.git`. Finish the setup with running `make setup` in the iBrew folder to configure the python packages for bare bones operation. Update to the latest version of iBrew with `git pull`
+You can run iBrew on systems that run python 2.7. Download and unpack the [source](https://github.com/Tristan79/iBrew/archive/master.zip), download it from github using [Github Desktop](https://desktop.github.com) or manually `git clone https://github.com/Tristan79/iBrew.git`. Finish the setup with running `make setup` in the iBrew folder to configure the python packages for bare bones operation. Update to the latest version of iBrew with `git pull`. Run `make` to see all other options possible.
+
+#### Bonjour
+
+Bonjour is not enabled by default, to install it use `make bonjour` or for windows `make bonjourwin`. But you have to have bonjour installed on your system, macOS its out of the box, on most linux system you can install it with (or try equivalent packages for your *nix distro) `apt-get install avahi-daemon avahi-discover libnss-mdns` and on Windows you either install iTunes or download it from [apple](http://developer.apple.com/networking/bonjour/download/)
+Also check out [pybonjour](https://code.google.com/archive/p/pybonjour/)
 
 ### Raspberry Pi Jessy (light)
 
